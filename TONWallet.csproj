@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="TonSdk.Adnl" Version="0.1.5" />
+    <PackageReference Include="TonSdk.Client" Version="0.3.2" />
+    <PackageReference Include="TonSdk.Connect" Version="0.2.4" />
+    <PackageReference Include="TonSdk.Contracts" Version="0.3.1" />
+    <PackageReference Include="TonSdk.Core" Version="0.3.2" />
+  </ItemGroup>
+
+</Project>
