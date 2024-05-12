@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,7 +15,9 @@ namespace TONWallet.ConfigManager
         {
             get
             {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TONWallet");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) 
+                    return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TONWallet");
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".tonwallet");
             }
         }
 

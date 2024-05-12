@@ -27,18 +27,16 @@ namespace TONWallet.ConfigManager
         public WalletSource TransformedSource { get; set; }
         public byte[] EncryptedContents { get; set; }
 
-        public byte[] GetDecrypted() => AESManager.Decrypt(EncryptedContents, Utils.sha256_v(Program.cfg.MasterPwdSHA512));
+        public byte[] GetDecrypted() => AESManager.Decrypt(EncryptedContents, Program.realMK);
 
-        public void EncryptContent(byte[] input) => EncryptedContents = AESManager.Encrypt(input, Utils.sha256_v(Program.cfg.MasterPwdSHA512));
+        public void EncryptContent(byte[] input) => EncryptedContents = AESManager.Encrypt(input, Program.realMK);
 
         [JsonIgnore]
         public byte[]? Seed
         {
             get
             {
-                if (Program.cfg.MasterPwdSHA512 is null) return null;
-
-                var c = GetDecrypted();
+                if (Program.cfg.MasterPwdSHA256 is null) return null;
 
                 if (Source == WalletSource.MNEMONIC_PHRASE)
                 {
@@ -52,6 +50,18 @@ namespace TONWallet.ConfigManager
         }
 
         [JsonIgnore]
+        public KeyPair KeyPair
+        {
+            get
+            {
+                if (Program.cfg.MasterPwdSHA256 is null) return null;
+
+                var kp = Mnemonic.GenerateKeyPair(Seed);
+                return kp;
+            }
+        }
+
+        [JsonIgnore]
         private WalletV4 _Wallet { get; set; }
 
         [JsonIgnore]
@@ -60,7 +70,7 @@ namespace TONWallet.ConfigManager
             get
             {
                 if (_Wallet is not null) return _Wallet;
-                if (Program.cfg.MasterPwdSHA512 is null) return null;
+                if (Program.cfg.MasterPwdSHA256 is null) return null;
 
                 _Wallet = WalletGenerator.CreateWallet(Seed);
                 return _Wallet;
@@ -91,6 +101,9 @@ namespace TONWallet.ConfigManager
                 ConfigWallet cwl = JsonConvert.DeserializeObject<ConfigWallet>(File.ReadAllText(wallet));
                 this.TransformedSource = cwl.Source;
                 this.EncryptedContents = cwl.EncryptedContents;
+            } else
+            {
+                this.TransformedSource = this.Source;
             }
         }
 

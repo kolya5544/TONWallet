@@ -1,4 +1,6 @@
 ﻿
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using TonSdk.Client;
 using TonSdk.Core.Boc;
 using TONWallet.ConfigManager;
@@ -21,7 +23,7 @@ namespace TONWallet.ActionSequence
                 Console.Clear();
 
                 var balance = await wallet.GetWalletBalance();
-                var txs = await Program.client.GetTransactions(wallet.Wallet.Address, 10);
+                var txs = await Program.client.GetTransactions(wallet.Wallet.Address, 20);
                 var txList = txs.ToList();
 
                 Console.WriteLine("=============================");
@@ -29,44 +31,89 @@ namespace TONWallet.ActionSequence
                 Console.WriteLine("=============================");
                 Console.WriteLine();
                 Console.WriteLine($"Address: {wallet.Wallet.Address}");
-                Console.WriteLine($"Balance: {balance}");
+                Console.WriteLine($"Balance: {balance} TON");
                 Console.WriteLine();
                 Console.WriteLine("Last 5 transactions:");
-                for (int i = 0; i < Math.Min(5, txList.Count); i++)
+                await PrintTXs(txList, 5);
+
+                Console.WriteLine();
+
+                Console.WriteLine("Select an action for the wallet");
+                Console.WriteLine("[1] Open your wallet in browser on tonscan.org");
+                Console.WriteLine("[2] List more (20) wallet transactions");
+                Console.WriteLine("[3*] List all wallet NFTs");
+                Console.WriteLine("[4] Send TON");
+                Console.WriteLine("[5*] Send NFT");
+                Console.WriteLine("[q] Quit to main menu");
+                Console.WriteLine("[delete] Delete the wallet");
+                Console.WriteLine("[reveal] Reveal the mnemonic phrase/seed");
+
+                Console.WriteLine();
+
+                string userchoice = Input("My action");
+                switch (userchoice)
                 {
-                    var tx = txList[i];
+                    case "1":
+                        var url = $"https://tonscan.org/address/{wallet.Wallet.Address}";
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            Process.Start("xdg-open", url);
+                        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                        {
+                            Process.Start("open", url);
+                        }
+                        continue;
+                    case "2":
+                        await PrintTXs(txList, 20); break;
+                    case "3":
+                        // todo
+                        break;
+                    case "4":
+                        await Program.RunSequence(typeof(SendTONSequence), [wallet]);
+                        break;
+                    case "5":
+                        // ehm todo
+                        break;
+                    case "q":
+                        return;
+                    case "delete":
+                        await Program.RunSequence(typeof(RequestMasterKeySequence));
 
-                    // classify the transaction
-                    var classify = await TransactionClassifier.ClassifyTXAsync(tx);
-                    if (classify.Item1 == TransactionType.FAKE)
-                    {
-                        txList.RemoveAt(i); i--; continue;
-                    }
-                    Console.Write($"[{i + 1}] ");
+                        Console.WriteLine("Are you sure you want to remove your wallet?");
+                        Console.WriteLine("Losing your mnemonic phrase or wallet seed will lead to permanent fund loss");
+                        Console.WriteLine("<!> Please, don't forget to save your phrase/seed <!>");
+                        Console.WriteLine();
+                        string confirm = Input("Yes, I truly want to remove my wallet (enter 'confirm' to confirm)");
 
-                    switch (classify.Item1)
-                    {
-                        case TransactionType.SIMPLE_TX:
-                            Console.Write($"Got {classify.Item2} TON from {MiniAddress(tx.InMsg.Source)}"); break;
-                        case TransactionType.COMMENTED_TX:
-                            Console.Write($"Got {classify.Item2} TON from {MiniAddress(tx.InMsg.Source)} with comment: '{classify.Item3}'"); break;
-                        case TransactionType.SIMPLE_JETTON_TRANSFER:
-                            Console.Write($"Got {classify.Item2} Jetton from {MiniAddress(tx.InMsg.Source)}"); break;
-                        case TransactionType.COMMENTED_JETTON_TRANSFER:
-                            Console.Write($"Got {classify.Item2} Jetton from {MiniAddress(tx.InMsg.Source)} with comment: '{classify.Item3}'"); break;
-                        case TransactionType.SIMPLE_NFT_TRANSFER:
-                            Console.Write($"Got an NFT #{classify.Item2} from {MiniAddress(tx.InMsg.Source)}"); break;
-                        case TransactionType.COMMENTED_NFT_TRANSFER:
-                            Console.Write($"Got an NFT #{classify.Item2} from {MiniAddress(tx.InMsg.Source)} with comment: '{classify.Item3}'"); break;
-                        case TransactionType.UNKNOWN:
-                            Console.Write($"Unknown transaction"); break;
-                    }
+                        if (confirm.Equals("confirm", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Program.cfg.wallets.Remove(wallet); // goodbye!
+                            return;
+                        }
+                        break;
+                    case "reveal":
+                        await Program.RunSequence(typeof(RequestMasterKeySequence));
 
-                    Console.Write($" @ {Time(tx.Utime)}\r\n");
+                        if (wallet.Source == WalletSource.SEED)
+                        {
+                            Console.WriteLine($"Here's your wallet seed. Keep it safe and NEVER share it with anyone!: {BAhex(wallet.GetSeed())}");
+                        } else if (wallet.Source == WalletSource.MNEMONIC_PHRASE)
+                        {
+                            var mnemo = wallet.GetMnemonicPhrase();
+                            Console.WriteLine($"Here's your mnemonic phrase. Keep it safe and NEVER share it with anyone!:");
 
-                    Thread.Sleep(API_RATELIMIT);
+                            for (int i = 0; i < mnemo.Length; i += 2)
+                            {
+                                Console.Write($"{(i + 1),-2}. {mnemo[i],-16}| {i + 2}.{mnemo[i + 1],-16}\r\n");
+                            }
+                        }
+                        break;
+                    default:
+                        continue;
                 }
-
                 YieldReturn();
             }
         }

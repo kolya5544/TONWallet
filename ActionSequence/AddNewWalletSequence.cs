@@ -151,7 +151,26 @@ namespace TONWallet.ActionSequence
                         break;
                     } else if (type == "2")
                     {
-                        // todo
+                        Console.WriteLine("Please input your seed/private key, consisting of 64 HEX characters.");
+                        Console.WriteLine("Example of how a seed looks: 1048ebb68bed9e94ab2f7490088ef0e734a6c4bef0c8cb8f5c753720d039b3c0.");
+
+                        string seed = Input("My seed");
+                        byte[] seedBA = hexBA(seed);
+
+                        Console.WriteLine("Attempting to resolve the wallet...");
+                        var wlt = WalletGenerator.CreateWallet(seedBA);
+                        Console.WriteLine($"Address of wallet imported: {wlt.Address}. Is that right?");
+                        string opt = Input("Is that right? (Y/n)");
+                        if (opt.Equals("n", StringComparison.OrdinalIgnoreCase)) continue;
+                        Console.WriteLine();
+                        Console.WriteLine($"=> WALLET SUCCESSFULLY ADDED! <=");
+                        Console.WriteLine($"Address: {wlt.Address}");
+
+                        Program.cfg.AddWallet(seedBA);
+
+                        Console.WriteLine();
+                        YieldReturn();
+                        break;
                     }
                 }
             }

@@ -8,7 +8,7 @@ namespace TONWallet.ConfigManager
 {
     public class Config : ConfigBase<Config>
     {
-        public string MasterPwdSHA512 { get; set; } = null;
+        public string MasterPwdSHA256 { get; set; } = null;
         public string TONAPIKey { get; set; } = null;
 
         public List<ConfigWallet> wallets { get; set; } = new List<ConfigWallet>();
@@ -21,6 +21,18 @@ namespace TONWallet.ConfigManager
                 Source = WalletSource.MNEMONIC_PHRASE
             };
             walletCfg.EncryptContent(Encoding.UTF8.GetBytes(mnemoFull));
+
+            this.wallets.Add(walletCfg);
+            this.Save();
+        }
+
+        public void AddWallet(byte[] seed)
+        {
+            var walletCfg = new ConfigWallet()
+            {
+                Source = WalletSource.SEED
+            };
+            walletCfg.EncryptContent(seed);
 
             this.wallets.Add(walletCfg);
             this.Save();

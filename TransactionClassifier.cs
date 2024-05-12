@@ -30,6 +30,7 @@ namespace TONWallet
         {
             var myAddr = tx.InMsg.Destination;
             var body = tx.InMsg.MsgData.Body;
+            if (body is null) return (TransactionType.SIMPLE_TX, tx.InMsg.Value.ToDecimal(), null);
             var parse = new CellSlice(body);
             var sender = tx.InMsg.Source;
 
@@ -109,8 +110,10 @@ namespace TONWallet
                     var walletData = await Program.client.RunGetMethod(sender, "get_nft_data", s);
                     var index = (BigInteger)walletData?.Stack[1];
                     var collection = new CellSlice((Cell)walletData?.Stack[2]).ReadAddress();
-                    var newStack = new List<IStackItem>();
-                    newStack.Add(new VmStackTinyInt(index));
+                    var newStack = new List<IStackItem>
+                    {
+                        new VmStackTinyInt(index)
+                    };
                     var walletAddr = await Program.client.RunGetMethod(collection, "get_nft_address_by_index", newStack.ToArray());
                     var itemAddress = new CellSlice((Cell)walletAddr?.Stack.FirstOrDefault()).ReadAddress();
 

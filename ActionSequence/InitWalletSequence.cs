@@ -11,6 +11,8 @@ namespace TONWallet.ActionSequence
     {
         public async Task Run()
         {
+            Console.WriteLine("=> Welcome to TONWallet! <=");
+
             Console.WriteLine("First, let's initialize your wallet.");
             Console.WriteLine("Make sure nobody is watching your screen, since some questions asked are confidential.");
 
@@ -46,7 +48,8 @@ namespace TONWallet.ActionSequence
                 break;
             }
             Console.WriteLine("<!> YOU WILL NOT BE ABLE TO RECOVER YOUR ACCESS IF MASTER PASSWORD IS LOST! <!>");
-            Program.cfg.MasterPwdSHA512 = sha256_s(masterPwd);
+            Program.cfg.MasterPwdSHA256 = sha256_s(masterPwd);
+            Program.realMK = sha256_v(masterPwd);
 
             Console.WriteLine();
 

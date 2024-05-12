@@ -18,14 +18,16 @@ namespace TONWallet
     {
         public static Config cfg = Config.Load("config.json");
         public static TonClient client;
+        public static byte[] realMK = new byte[0];
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("=> Welcome to TONWallet! <=");
-
-            if (cfg.MasterPwdSHA512 is null)
+            if (cfg.MasterPwdSHA256 is null)
             {
                 await RunSequence(typeof(InitWalletSequence)); 
+            } else
+            {
+                await RunSequence(typeof(RequestMasterKeySequence));
             }
 
             // create http parameters for ton client 
